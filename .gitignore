@@ -1,0 +1,25 @@
+# Dependências instaladas (regeneradas com npm install)
+node_modules/
+frontend/node_modules/
+
+# CRÍTICO: nunca commitar — contém chave privada
+.env
+
+# Arquivos gerados pelo Hardhat (regenerados com npm run compile)
+cache/
+artifacts/
+
+# Informações do deploy (geradas pelo scripts/deploy.js)
+# NÃO adicionar aqui — queremos commitar o deployment.json
+# para o README poder referenciar o endereço do contrato
+
+# Build do frontend
+frontend/dist/
+
+# Arquivos do sistema operacional
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
