@@ -56,7 +56,7 @@ bash
 git clone https://github.com/SEU_USUARIO/healthtracker.git
 cd healthtracker
 cp .env.example .env
-# Preenchimento da PRIVATE_KEY e SEPOLIA_RPC_URL no .env
+Preenchimento da Private_key e SEPHOLIA_RPC_URL no .env
 
 npm install
 npm run compile      # compila o Solidity
@@ -69,11 +69,10 @@ npm run deploy:sepolia
 bash
 cd frontend
 cp .env.example .env
-# Opcional: preencha VITE_PINATA_JWT para habilitar anexos
 
 npm install
 npm run dev
-# Abra http://localhost:5173
+
 
 ## Estrutura do projeto
 
