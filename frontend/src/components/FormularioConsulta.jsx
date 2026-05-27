@@ -70,6 +70,8 @@ export function FormularioConsulta({ conta, contrato, aoSalvar }) {
         anexos: [],
       };
 
+      // dadoCifrado é o dado que vai gerar o hash — precisa ser salvo
+      // exatamente assim no localStorage para a verificação funcionar
       const dadoCifrado = await encrypt(payload, conta);
       const hashConteudo = await sha256(dadoCifrado);
 
@@ -84,28 +86,26 @@ export function FormularioConsulta({ conta, contrato, aoSalvar }) {
         for (const arq of arquivos) {
           const resultado = await uploadArquivoCriptografado(arq, conta, PINATA_JWT);
           metaAnexos.push({
-            nome: arq.nome,
+            nome: arq.name,
             cid: resultado.cid,
             url: resultado.urlGateway,
           });
           hashIpfs = resultado.cidHash;
         }
-
-        // Re-cifra com referências aos anexos
+        // Registra os CIDs dos anexos no payload mas NÃO regera o dadoCifrado
+        // pois o hash já foi calculado — os anexos são referenciados pelo hashIpfs on-chain
         payload.anexos = metaAnexos;
-        const cifradoComAnexos = await encrypt(payload, conta);
-        salvarLocal("temp_" + Date.now(), cifradoComAnexos);
       }
 
       // ── Etapa 3: Solicita assinatura na MetaMask ─────────────────────
       setEtapa(3);
-      setStatus({ tipo: "info", msg: "📱 Confirme a transação na MetaMask..." });
+      setStatus({ tipo: "info", msg: "Confirme a transação na MetaMask..." });
 
       const tx = await contrato.registerConsultation(hashConteudo, hashIpfs);
 
       // ── Etapa 4: Aguarda confirmação na blockchain ───────────────────
       setEtapa(4);
-      setStatus({ tipo: "info", msg: `⛓ Transação enviada (${tx.hash.slice(0, 14)}...). Aguardando bloco...` });
+      setStatus({ tipo: "info", msg: `Transação enviada (${tx.hash.slice(0, 14)}...). Aguardando bloco...` });
 
       const recibo = await tx.wait();
 
@@ -115,16 +115,21 @@ export function FormularioConsulta({ conta, contrato, aoSalvar }) {
       );
       const consultationId = evento?.args?.consultationId;
 
-      // ── Etapa 5: Salva localmente com ID definitivo ──────────────────
+      // ── Etapa 5: Salva localmente ────────────────────────────────────
+      // REGRA CRÍTICA: salvar exatamente o dadoCifrado que gerou o hashConteudo.
+      // Qualquer campo adicional (txHash, bloco) quebraria a verificação de integridade
+      // porque o hash local seria diferente do hash on-chain.
+      // Os metadados da transação ficam num campo separado que não integra o hash.
       setEtapa(5);
-      const payloadFinal = {
-        ...payload,
+      salvarLocal(consultationId, dadoCifrado);
+
+      // Salva metadados da transação separadamente (não integram o hash)
+      salvarLocal(consultationId + "_meta", JSON.stringify({
         consultationId,
         txHash: tx.hash,
         bloco: recibo.blockNumber,
-      };
-      const cifradoFinal = await encrypt(payloadFinal, conta);
-      salvarLocal(consultationId, cifradoFinal);
+        criadoEm: new Date().toISOString(),
+      }));
 
       // Sucesso!
       setStatus({
@@ -139,7 +144,7 @@ export function FormularioConsulta({ conta, contrato, aoSalvar }) {
 
     } catch (err) {
       const msg = err.code === "ACTION_REJECTED"
-        ? "Transação cancelada. Recusado na MetaMask."
+        ? "Transação cancelada. Você recusou na MetaMask."
         : (err.message || "Erro desconhecido.").slice(0, 150);
       setStatus({ tipo: "erro", msg: "❌ " + msg });
     } finally {
@@ -150,7 +155,7 @@ export function FormularioConsulta({ conta, contrato, aoSalvar }) {
 
   return (
     <div style={s.card}>
-      <h2 style={s.titulo}>Nova Consulta</h2>
+      <h2 style={s.titulo}>Nova Consulta Médica</h2>
 
       {/* Barra de progresso por etapas */}
       {loading && (
@@ -217,7 +222,7 @@ export function FormularioConsulta({ conta, contrato, aoSalvar }) {
           <Campo label="Especialidade">
             <input style={s.input} value={form.especialidade}
               onChange={atualizar("especialidade")}
-              placeholder="Nutrição, Cardiologia, Clínico Geral..." />
+              placeholder="Cardiologia, Clínico Geral..." />
           </Campo>
           <Campo label="Local de atendimento">
             <input style={s.input} value={form.localAtendimento}
@@ -338,3 +343,4 @@ const s = {
   btnEnviar: { marginTop: 20, width: "100%", background: "var(--color-text-primary)", color: "var(--color-background-primary)", border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 500 },
   rodape: { fontSize: 11, color: "var(--color-text-tertiary)", textAlign: "center", marginTop: 10, lineHeight: 1.5 },
 };
+

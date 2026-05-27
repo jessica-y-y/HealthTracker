@@ -35,6 +35,13 @@ export function HistoricoConsultas({ conta, contrato, chaveRecarga }) {
           }
         }
 
+        // Carrega metadados da transação (txHash, bloco) salvos separadamente
+        let meta = null;
+        const rawMeta = carregarLocal(id + "_meta");
+        if (rawMeta) {
+          try { meta = JSON.parse(rawMeta); } catch { /* ignora */ }
+        }
+
         // Busca metadados públicos on-chain
         const [contentHash, ipfsCidHash, timestamp] =
           await contrato.getConsultation(id);
@@ -46,6 +53,7 @@ export function HistoricoConsultas({ conta, contrato, chaveRecarga }) {
           timestamp:   Number(timestamp),
           temLocal:    !!rawLocal,
           dados:       dadosDecifrados,
+          meta,
         });
       }
       setConsultas(itens);
@@ -99,12 +107,12 @@ export function HistoricoConsultas({ conta, contrato, chaveRecarga }) {
   if (consultas.length === 0) {
     return (
       <div style={s.card}>
-        <h2 style={s.titulo}>Histórico de Saúde</h2>
+        <h2 style={s.titulo}>Histórico de Consultas</h2>
         <div style={s.vazio}>
           <span style={{ fontSize: 48 }}>🩺</span>
-          <p style={{ fontWeight: 500 }}>Nenhuma registro de saúde ainda.</p>
+          <p style={{ fontWeight: 500 }}>Nenhuma consulta registrada ainda.</p>
           <p style={{ fontSize: 13, color: "var(--color-text-tertiary)" }}>
-            Clique em "Nova Consulta de Saúde" para começar seu histórico.
+            Clique em "Nova Consulta" para começar seu histórico.
           </p>
         </div>
       </div>
@@ -132,19 +140,22 @@ export function HistoricoConsultas({ conta, contrato, chaveRecarga }) {
             <div style={s.cabecalho} onClick={() => setExpandida(aberta ? null : item.id)}>
               <div>
                 <div style={s.registroTitulo}>
-                  {d?.nomeProfissional || "Profissional não disponível localmente"}
-                  {d?.especialidade && (
-                    <span style={s.tagEspecialidade}>{d.especialidade}</span>
-                  )}
-                </div>
-                <div style={s.registroMeta}>
-                  📅 {data}
-                  {d?.localAtendimento && <span>· 📍 {d.localAtendimento}</span>}
-                  {item.temLocal
-                    ? <span style={s.tagLocal}>💾 dado local</span>
-                    : <span style={s.tagSemLocal}>⚠️ sem dado local</span>
-                  }
-                  {item.ipfsCidHash !== ethers.ZeroHash && (
+              {d?.diagnostico || "Diagnostico nao disponivel localmente"}
+            </div>
+            <div style={s.registroMeta}>
+              {d?.nomeProfissional && (
+                <span style={s.tagEspecialidade}>{d.nomeProfissional}</span>
+              )}
+              {d?.especialidade && (
+                <span style={s.tagEspecialidade}>{d.especialidade}</span>
+              )}
+              📅 {data}
+              {d?.localAtendimento && <span>· 📍 {d.localAtendimento}</span>}
+              {item.temLocal
+                ? <span style={s.tagLocal}>dado local</span>
+                : <span style={s.tagSemLocal}>sem dado local</span>
+              }
+              {item.ipfsCidHash !== ethers.ZeroHash && (
                     <span style={s.tagIpfs}>📎 anexo IPFS</span>
                   )}
                 </div>
@@ -188,20 +199,30 @@ export function HistoricoConsultas({ conta, contrato, chaveRecarga }) {
                 {/* Dados on-chain */}
                 <div style={s.blocoChain}>
                   <p style={s.subtitulo}>Rastreabilidade on-chain (Sepolia)</p>
-                  <HashLinha label="ID da consulta"  valor={item.id} />
-                  <HashLinha label="Hash do conteúdo" valor={item.contentHash} />
+                  <HashLinha label="ID da consulta"   valor={item.id} />
+                  <HashLinha label="Hash do conteudo" valor={item.contentHash} />
                   <HashLinha label="Registrado em"
                     valor={new Date(item.timestamp * 1000).toLocaleString("pt-BR")} monospace={false} />
+                  {item.meta?.txHash && (
+                    <HashLinha label="TX Hash" valor={item.meta.txHash} />
+                  )}
+                  {item.meta?.bloco && (
+                    <HashLinha label="Bloco" valor={String(item.meta.bloco)} monospace={false} />
+                  )}
 
                   <div style={{ display: "flex", gap: 8, marginTop: 12, flexWrap: "wrap" }}>
                     <button style={s.btnOutline}
                       onClick={() => verificarIntegridade(item)}
                       disabled={verificando === item.id || !item.temLocal}>
-                      {verificando === item.id ? "Verificando..." : "🔍 Verificar integridade"}
+                      {verificando === item.id ? "Verificando..." : "Verificar integridade"}
                     </button>
-                    <a href={`https://sepolia.etherscan.io/address/${conta}#events`}
-                      target="_blank" rel="noreferrer" style={{ ...s.btnOutline, textDecoration: "none" }}>
-                      Etherscan ↗
+                    <a
+                      href={item.meta?.txHash
+                        ? `https://sepolia.etherscan.io/tx/${item.meta.txHash}`
+                        : `https://sepolia.etherscan.io/address/${conta}#events`}
+                      target="_blank" rel="noreferrer"
+                      style={{ ...s.btnOutline, textDecoration: "none" }}>
+                      Ver no Etherscan
                     </a>
                   </div>
 
