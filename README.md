@@ -53,10 +53,11 @@ HealthTracker permite que pacientes registrem suas consultas de saúde com:
 ### Contratos
 
 bash
-git clone https://github.com/SEU_USUARIO/healthtracker.git
+git clone (repositório)
 cd healthtracker
 cp .env.example .env
-# Preenchimento da PRIVATE_KEY e SEPOLIA_RPC_URL no .env
+Preenchimento da Private Key e Sepholia RPC URL no .env
+
 
 npm install
 npm run compile      # compila o Solidity
@@ -69,11 +70,12 @@ npm run deploy:sepolia
 bash
 cd frontend
 cp .env.example .env
-# Opcional: preencha VITE_PINATA_JWT para habilitar anexos
+Opcional (para habilitar anexos): preencha VITE_PINATA_JWT
 
 npm install
 npm run dev
-# Abra http://localhost:5173
+Abra http://localhost:5173
+
 
 ## Estrutura do projeto
 
