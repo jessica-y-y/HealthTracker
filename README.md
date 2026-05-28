@@ -3,29 +3,30 @@
 > Rastreabilidade de consultas consultas de saúde com privacidade por criptografia e imutabilidade blockchain.
 > **Hackathon Web3 — Desafio 1**
 
+## O problema que resolve
 
-## O que é
-
-HealthTracker permite que pacientes registrem suas consultas de saúde com:
-- Diagnóstico, recomendações, orientações e medicações
-- Dados do profissional (nome, registro, especialidade, local)
-- Anexos (receituários, exames) criptografados no IPFS
-- **Prova de integridade imutável na blockchain Sepolia**
-
-**Nenhum dado sensível vai para a blockchain** — apenas o hash SHA-256 do conteúdo criptografado.
+Toda consulta de saúde começa do zero porque não existe um 
+histórico confiável, portátil e de posse do paciente. 
+Profissionais de saúde tomam decisões sem contexto completo (o paciente não sabe tudo o que é relevante de ser dito, e o médico faz o máximo de perguntas que pode - o erro de toda comunicação também acontece quando mais precisamos que tudo seja entendido). 
+O HealthTracker resolve isso sendo o passaporte de saúde do 
+usuário — dados que ele carrega, controla e compartilha com 
+quem quiser, quando quiser, com prova criptográfica de que não foram adulterados.
 
 ## Como funciona (em 4 passos)
 
 1. Usuário preenche a consulta no app
         ↓
 2. Dados são criptografados (AES-256-GCM) no browser
-   Chave = derivada da wallet via PBKDF2 — nunca sai do browser
+   Chave = derivada da wallet — nunca sai do browser
         ↓
 3. Dado criptografado → localStorage (no device do usuário)
    Arquivos → IPFS/Pinata (criptografados antes do upload)
         ↓
 4. Hash SHA-256 do dado criptografado → blockchain Sepolia
    registerConsultation(hash, ipfsHash) — imutável, público, rastreável
+        ↓
+5. Qualquer pessoa verifica integridade
+verifyIntegrity(id, hash) — sem servidor, sem login   
 
 ## Requisitos obrigatórios do hackathon atendidos:
 
@@ -34,6 +35,9 @@ HealthTracker permite que pacientes registrem suas consultas de saúde com:
 - Consulta/verificação pública do registro: `verifyIntegrity()` + Etherscan 
 - Repositório GitHub funcional
 - README explicativo
+- Vídeo pitch:
+- Apresentação (slides):
+- App funcionando: https://jessica-y-y.github.io/HealthTracker/
 
 ## Contrato deployado
 
@@ -57,13 +61,10 @@ git clone (repositório)
 cd healthtracker
 cp .env.example .env
 Preenchimento da Private Key e Sepholia RPC URL no .env
-
-
 npm install
 npm run compile      # compila o Solidity
 npm test             # 9 testes — todos devem passar
 npm run deploy:sepolia
-
 
 ### Frontend
 
@@ -71,39 +72,9 @@ bash
 cd frontend
 cp .env.example .env
 Opcional (para habilitar anexos): preencha VITE_PINATA_JWT
-
 npm install
 npm run dev
 Abra http://localhost:5173
-
-
-## Estrutura do projeto
-
-healthtracker/
-├── contracts/
-│   └── HealthTracker.sol              # Contrato Solidity principal
-├── scripts/
-│   └── deploy.js                      # Deploy 
-├── test/
-│   └── HealthTracker.test.js          # 9 testes unitários
-├── frontend/
-│   ├── src/
-│   │   ├── App.jsx                    # App principal
-│   │   ├── hooks/
-│   │   │   └── useWallet.js           # Conexão MetaMask
-│   │   ├── components/
-│   │   │   ├── FormularioConsulta.jsx # Registro de consulta
-│   │   │   └── HistoricoConsultas.jsx # Histórico + verificação
-│   │   └── utils/
-│   │       ├── crypto.js              # AES-256-GCM + SHA-256
-│   │       ├── storage.js             # localStorage criptografado
-│   │       ├── ipfs.js                # Upload/download IPFS
-│   │       └── contract.json          # ABI + endereço (gerado pelo deploy)
-│   └── .env.example
-├── .env.example
-├── hardhat.config.js
-├── package.json
-└── README.md
 
 ## Segurança
 
@@ -117,3 +88,4 @@ Camada: Mecanismo
 ## Stack
 
 Solidity 0.8.24 · Hardhat · Sepolia Testnet · MetaMask · Ethers.js v6 · React 18 · Vite · Web Crypto API · IPFS/Pinata
+
