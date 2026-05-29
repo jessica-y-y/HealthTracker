@@ -171,9 +171,9 @@ export function HistoricoConsultas({ conta, contrato, chaveRecarga }) {
                 {d ? (
                   <>
                     {d.registro && <InfoLinha label="Nº de registro" valor={d.registro} />}
+                    {d.sintomas && <InfoBloco label="Sintomas / motivo" valor={d.sintomas} />}
                     {d.diagnostico && <InfoBloco label="Diagnóstico" valor={d.diagnostico} />}
-                    {d.recomendacoes && <InfoBloco label="Recomendações" valor={d.recomendacoes} />}
-                    {d.orientacoes && <InfoBloco label="Orientações" valor={d.orientacoes} />}
+                    {d.recomendacoesOrientacoes && <InfoBloco label="Recomendações e orientações" valor={d.recomendacoesOrientacoes} />}
                     {d.medicacoes && <InfoBloco label="Medicações e posologia" valor={d.medicacoes} />}
                     {d.observacoes && <InfoBloco label="Observações" valor={d.observacoes} />}
 

@@ -12,17 +12,17 @@ const FORM_VAZIO = {
   registro:        "",       // CRM, CRN, CRO, CRP, etc.
   especialidade:   "",
   localAtendimento:"",
+  sintomas:        "",
   diagnostico:     "",
-  recomendacoes:   "",
-  orientacoes:     "",
+  recomendacoesOrientacoes:     "",
   medicacoes:      "",
   observacoes:     "",
 };
 
 const ETAPAS = [
   "",
-  "Criptografando dados...",
   "Enviando anexos para IPFS...",
+  "Criptografando dados...",
   "Aguardando MetaMask...",
   "Confirmando na blockchain...",
   "Finalizando...",
@@ -59,10 +59,8 @@ export function FormularioConsulta({ conta, contrato, aoSalvar }) {
       setLoading(true);
       setStatus(null);
 
-      // ── Etapa 1: Criptografia local ──────────────────────────────────
-      setEtapa(1);
-      setStatus({ tipo: "info", msg: "🔒 Criptografando dados da consulta..." });
-
+      // Monta o payload inicial (sem os anexos ainda — serão preenchidos
+      // depois do upload IPFS, antes da criptografia)
       const payload = {
         ...form,
         versao: "1.0",
@@ -70,32 +68,40 @@ export function FormularioConsulta({ conta, contrato, aoSalvar }) {
         anexos: [],
       };
 
-      // dadoCifrado é o dado que vai gerar o hash — precisa ser salvo
-      // exatamente assim no localStorage para a verificação funcionar
-      const dadoCifrado = await encrypt(payload, conta);
-      const hashConteudo = await sha256(dadoCifrado);
-
-      // ── Etapa 2: Upload de anexos (se houver e Pinata configurado) ───
+      // ── Etapa 1: Upload dos anexos PRIMEIRO (se houver) ───────────────
+      // Anexos precisam estar prontos antes da criptografia, pois os CIDs
+      // entram no payload que vai gerar o hash on-chain.
       let hashIpfs = ethers.ZeroHash;
+      const metaAnexos = [];
 
-      if (arquivos.length > 0 && PINATA_JWT) {
-        setEtapa(2);
-        setStatus({ tipo: "info", msg: `📎 Enviando ${arquivos.length} arquivo(s) para IPFS...` });
+      if (arquivos.length > 0) {
+        if (!PINATA_JWT) {
+          throw new Error("Configure VITE_PINATA_JWT no frontend/.env para anexar arquivos.");
+        }
+        setEtapa(1);
+        setStatus({ tipo: "info", msg: `Enviando ${arquivos.length} arquivo(s) para IPFS...` });
 
-        const metaAnexos = [];
         for (const arq of arquivos) {
           const resultado = await uploadArquivoCriptografado(arq, conta, PINATA_JWT);
           metaAnexos.push({
             nome: arq.name,
             cid: resultado.cid,
             url: resultado.urlGateway,
+            tamanho: arq.size,
+            tipo: arq.type,
           });
           hashIpfs = resultado.cidHash;
         }
-        // Registra os CIDs dos anexos no payload mas NÃO regera o dadoCifrado
-        // pois o hash já foi calculado — os anexos são referenciados pelo hashIpfs on-chain
-        payload.anexos = metaAnexos;
       }
+
+      payload.anexos = metaAnexos;
+
+      // ── Etapa 2: Criptografar payload completo (texto + anexos) ───────
+      setEtapa(2);
+      setStatus({ tipo: "info", msg: "Criptografando dados completos..." });
+
+      const dadoCifrado = await encrypt(payload, conta);
+      const hashConteudo = await sha256(dadoCifrado);
 
       // ── Etapa 3: Solicita assinatura na MetaMask ─────────────────────
       setEtapa(3);
@@ -109,28 +115,22 @@ export function FormularioConsulta({ conta, contrato, aoSalvar }) {
 
       const recibo = await tx.wait();
 
-      // Extrai o ID da consulta do evento emitido pelo contrato
       const evento = recibo.logs.find(
         (log) => log.fragment?.name === "ConsultationRegistered"
       );
       const consultationId = evento?.args?.consultationId;
 
-      // ── Etapa 5: Salva localmente ────────────────────────────────────
-      // REGRA CRÍTICA: salvar exatamente o dadoCifrado que gerou o hashConteudo.
-      // Qualquer campo adicional (txHash, bloco) quebraria a verificação de integridade
-      // porque o hash local seria diferente do hash on-chain.
-      // Os metadados da transação ficam num campo separado que não integra o hash.
+      // ── Etapa 5: Salva localmente — exatamente o dado que gerou o hash ─
       setEtapa(5);
       salvarLocal(consultationId, dadoCifrado);
 
-      // Salva metadados da transação separadamente (não integram o hash)
       salvarLocal(consultationId + "_meta", JSON.stringify({
         consultationId,
         txHash: tx.hash,
         bloco: recibo.blockNumber,
         criadoEm: new Date().toISOString(),
       }));
-
+      
       // Sucesso!
       setStatus({
         tipo: "sucesso",
@@ -167,7 +167,7 @@ export function FormularioConsulta({ conta, contrato, aoSalvar }) {
                 ? "var(--color-background-info)"
                 : "var(--color-background-secondary)",
             }}>
-              {["🔒","📎","📱","⛓","💾"][i-1]}
+              {["📎","🔒","📱","⛓","💾"][i-1]}
             </div>
           ))}
           <span style={{ fontSize: 12, color: "var(--color-text-secondary)", marginLeft: 8 }}>
@@ -238,22 +238,23 @@ export function FormularioConsulta({ conta, contrato, aoSalvar }) {
         {/* ── Seção: Conteúdo clínico ── */}
         <p style={s.secao}>Conteúdo Clínico</p>
 
-        <Campo label="Diagnóstico *" obrigatorio>
+        <Campo label="Sintomas / motivo da consulta">
+          <textarea style={{ ...s.input, ...s.area }}
+            value={form.sintomas} onChange={atualizar("sintomas")}
+            placeholder="Descreva os sintomas ou o motivo que levou à consulta..." />
+        </Campo>
+
+        <Campo label="Diagnóstico *" obrigatorio espacoTopo>
           <textarea style={{ ...s.input, ...s.area }}
             value={form.diagnostico} onChange={atualizar("diagnostico")}
             placeholder="Descreva o diagnóstico apresentado pelo profissional..." required />
         </Campo>
 
-        <Campo label="Recomendações" espacoTopo>
+        <Campo label="Recomendações e orientações" espacoTopo>
           <textarea style={{ ...s.input, ...s.area }}
-            value={form.recomendacoes} onChange={atualizar("recomendacoes")}
-            placeholder="Recomendações do profissional (exames, encaminhamentos, retorno)..." />
-        </Campo>
-
-        <Campo label="Orientações gerais" espacoTopo>
-          <textarea style={{ ...s.input, ...s.area }}
-            value={form.orientacoes} onChange={atualizar("orientacoes")}
-            placeholder="Orientações de cuidado, dieta, atividade física, repouso..." />
+            value={form.recomendacoesOrientacoes}
+            onChange={atualizar("recomendacoesOrientacoes")}
+            placeholder="Recomendações do profissional (exames, encaminhamentos, retorno) e orientações de cuidado (dieta, atividade física, repouso)..." />
         </Campo>
 
         <Campo label="Medicações e posologia" espacoTopo>
@@ -343,4 +344,3 @@ const s = {
   btnEnviar: { marginTop: 20, width: "100%", background: "var(--color-text-primary)", color: "var(--color-background-primary)", border: "none", borderRadius: 10, padding: 13, fontSize: 15, fontWeight: 500 },
   rodape: { fontSize: 11, color: "var(--color-text-tertiary)", textAlign: "center", marginTop: 10, lineHeight: 1.5 },
 };
-
