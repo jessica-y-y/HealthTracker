@@ -22,7 +22,7 @@ autoridade central.
         TX Hash deploy: 0x70834e54d65a2ddb2b84d22f5152c675191786a4c49b6209236e887686225bc3
 - README (este documento)
 - Vídeo pitch: https://www.youtube.com/watch?v=Xfj54bNFVmw
-- Apresentação (slides): https://drive.google.com/file/d/1CQgjOOII4H3KAEGNXq2EuSPilET6FNoB/view?usp=drive_link
+- Apresentação (slides): https://drive.google.com/file/d/1Ykqshy3FDXTUsCjR1VjdfkwYb9pfruPd/view?usp=sharing
 - App funcionando: https://jessica-y-y.github.io/HealthTracker/
 
 ## Tecnologias
