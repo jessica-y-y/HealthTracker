@@ -1,7 +1,7 @@
 # HealthTracker
 Rastreabilidade de consultas de saúde com privacidade por criptografia e imutabilidade blockchain.
 
-Hackathon Web3 RESTIC 29 — Desafio 1 ProofChain
+HackWeb | Web3.0 RESTIC 29 | Desafio 1 ProofChain
 
 ## Sobre o projeto
 Hoje não existe um histórico de saúde: cada consulta fica armazenda em cada instituição de saúde (quando fica) e as pessoas perdem informações que elas nem sabem que são valiosas sobre a sua saúde. Isso dificulta diagnósticos importantes, pois toda consulta de saúde começa do zero, o paciente não sabe o que é relevante de ser informado e o profissional não tem o tempo necessário para recomeçar uma investigação sobre a vida do paciente em cada novo contato. Esse projeto é o histórico portátil e de posse do paciente, que pode ser compartilhado com os profissionais de saúde para consultarem o que é relevante de acordo com cada paciente e podem tomar melhores decisões, com base em dados confiáveis, com prova criptografica de 
@@ -21,8 +21,8 @@ autoridade central.
         Etherscan [Ver contrato]: https://sepolia.etherscan.io/address/0x69E709494B364A0807D5130c78aA9f0631C6FA53
         TX Hash deploy: 0x70834e54d65a2ddb2b84d22f5152c675191786a4c49b6209236e887686225bc3
 - README (este documento)
-- Vídeo pitch:
-- Apresentação (slides):
+- Vídeo pitch: https://www.youtube.com/watch?v=Xfj54bNFVmw
+- Apresentação (slides): https://drive.google.com/file/d/1CQgjOOII4H3KAEGNXq2EuSPilET6FNoB/view?usp=drive_link
 - App funcionando: https://jessica-y-y.github.io/HealthTracker/
 
 ## Tecnologias
